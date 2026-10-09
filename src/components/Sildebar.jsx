@@ -15,10 +15,8 @@ export default function Sidebar() {
     { key: 'overview', label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
     { key: 'categories', label: 'categories', path: '/dashboard/donations', icon: Heart },
     { key: 'product', label: 'product', path: '/dashboard/collections', icon: Users },
-     { key: 'report', label: 'report', path: '/dashboard/report', icon: Users },
-    
-    { key: 'settings', label: 'setting', path: '/dashboard/setting', icon: Settings },
-  ];
+     { key: 'Accountinfo', label: 'Accountinfo', path: '/dashboard/account', icon: Users },
+  ]
 
   return (
     <>

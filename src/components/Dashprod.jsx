@@ -1,31 +1,103 @@
-import React, { useState, useMemo } from "react";
-import { 
-  Plus, Search, Filter, MoreVertical, 
-  ArrowUpDown, Package, DollarSign, AlertTriangle, CheckCircle2 
+import React, { useState, useEffect, useMemo } from "react";
+import axiosInstance from "../API/axiosInstance";
+import {
+  Plus, Search, Filter, MoreVertical,
+  ArrowUpDown, Package, DollarSign, AlertTriangle, CheckCircle2
 } from "lucide-react";
 
-const INITIAL_PRODUCTS = [
-  { id: "1", name: "Wireless Noise-Canceling Headphones", sku: "AUDIO-001", category: "Electronics", price: 299.99, stock: 45, status: "In Stock", sales: 1240 },
-  { id: "2", name: "Ergonomic Leather Office Chair", sku: "FURN-102", category: "Furniture", price: 189.50, stock: 8, status: "Low Stock", sales: 430 },
-  { id: "3", name: "Mechanical Gaming Keyboard", sku: "TECH-304", category: "Electronics", price: 119.00, stock: 0, status: "Out of Stock", sales: 890 },
-  { id: "4", name: "Stainless Steel Water Bottle 1L", sku: "LFE-088", category: "Lifestyle", price: 24.99, stock: 120, status: "In Stock", sales: 2100 },
-  { id: "5", name: "Smart Fitness Watch V2", sku: "TECH-512", category: "Electronics", price: 199.99, stock: 5, status: "Low Stock", sales: 670 },
-];
-
 export default function ProductsDashboard() {
-  const [products] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Load categories once on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Re-fetch products whenever the selected category changes
+  useEffect(() => {
+    fetchProducts(selectedCategory);
+  }, [selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axiosInstance.get("/categories");
+      // Adjust this based on your API response shape
+      setCategories(response.data.data);
+    } catch (err) {
+      console.log(err);
+      setError("Failed to load categories");
+    }
+  };
+
+  const fetchProducts = async (category = "All") => {
+    try {
+      setLoading(true);
+      // Only send the category param when a specific category is selected
+      const params = category !== "All" ? { category } : {};
+      const response = await axiosInstance.get("/products", { params });
+      // Adjust this based on your API response shape
+      setProducts(response.data.data);
+    } catch (err) {
+      console.log(err);
+      setError("Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Adds a new product via the API and appends it to local state
+  const addProduct = async (newProduct) => {
+    try {
+      const response = await axiosInstance.post("/products", newProduct);
+      setProducts((prev) => [...prev, response.data.data]);
+    } catch (err) {
+      console.log(err);
+      setError("Failed to add product");
+    }
+  };
+
+  // Updates an existing product via the API and syncs local state
+  const updateProduct = async (id, updates) => {
+    try {
+      const response = await axiosInstance.put(`/products/${id}`, updates);
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id === id ? response.data.data : product
+        )
+      );
+    } catch (err) {
+      console.log(err);
+      setError("Failed to update product");
+    }
+  };
+
+  // Simple placeholder trigger for "Add Product" — swap for a real modal/form
+  const handleAddProductClick = () => {
+    const name = window.prompt("Product name?");
+    if (!name) return;
+    const sku = window.prompt("SKU?") || "";
+    const category_id = window.prompt("Category ID?") || "";
+    const price = parseFloat(window.prompt("Price?") || "0");
+    const stock = parseInt(window.prompt("Stock?") || "0", 10);
+
+    addProduct({ name, sku, category_id, price, stock });
+  };
+
+  // Category filtering now happens via the API (see fetchProducts), so this
+  // only needs to handle the search box on top of whatever the API returned.
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return (
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
-  // Stats derived from real product data instead of hardcoded strings
+  // Stats derived from real product data
   const stats = useMemo(() => {
     const totalProducts = products.length;
     const totalRevenue = products.reduce((sum, p) => sum + p.price * p.sales, 0);
@@ -42,22 +114,33 @@ export default function ProductsDashboard() {
     };
   }, [products]);
 
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
+
+  if (error) {
+    return <h2>{error}</h2>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 p-6 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Products</h1>
             <p className="text-sm text-slate-500">Manage catalog, inventory levels, and performance.</p>
           </div>
-          <button className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition-colors text-sm cursor-pointer">
+          <button
+            onClick={handleAddProductClick}
+            className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition-colors text-sm cursor-pointer"
+          >
             <Plus className="w-4 h-4" /> Add Product
           </button>
         </div>
 
-        {/* Metrics Grid — driven by real product state */}
+        {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Products"
@@ -108,9 +191,11 @@ export default function ProductsDashboard() {
                 className="border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white cursor-pointer"
               >
                 <option value="All">All Categories</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Furniture">Furniture</option>
-                <option value="Lifestyle">Lifestyle</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

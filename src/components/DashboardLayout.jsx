@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sildebar';
+import Header from './Header';
 
 
 export default function DashboardLayout() {
@@ -11,6 +12,7 @@ export default function DashboardLayout() {
       
       {/* Main Content Area */}
       <main className="flex-1 p-8 overflow-y-auto">
+        <Header />
         <Outlet /> 
       </main>
     </div>

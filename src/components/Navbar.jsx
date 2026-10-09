@@ -1,15 +1,22 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useRef, useEffect } from 'react'
 import { IoMdSearch } from "react-icons/io";
 import { FaRegUser } from "react-icons/fa";
 import { FaBagShopping } from "react-icons/fa6";
 import { HiMenu, HiX } from "react-icons/hi";
-import { LogIn, Trash2 } from "lucide-react";
-import { Link } from 'react-router-dom'
+import { Trash2, User, LogOut } from "lucide-react";
+import { Link, useNavigate } from 'react-router-dom'
 import { CartContext } from '../components/Cartcontext'
+import { useAuth } from '../components/AuthContext'
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false)
-const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartTotal } = useContext(CartContext)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartTotal } = useContext(CartContext)
+  const { isAuthenticated, isAdmin, logout } = useAuth()
+  const navigate = useNavigate()
+
   const navLinks = [
     { name: 'Shop', path: '/shop' },
     { name: 'Categories', path: '/categories' },
@@ -17,6 +24,30 @@ const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartT
     { name: 'Sale', path: '/shop' },
     { name: 'About', path: '/about' },
   ]
+
+  // close dropdown when clicking outside it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = async () => {
+    await logout()
+    setProfileDropdownOpen(false)
+    setMenuOpen(false)
+    navigate('/login')
+  }
+
+  const handleProfileClick = () => {
+    setProfileDropdownOpen(false)
+    setMenuOpen(false)
+    navigate('/profile')
+  }
 
   return (
     <nav className='sticky top-0 z-50 flex items-center justify-between bg-black h-[70px] md:h-[90px] w-full text-white px-4 sm:px-6 md:px-10'>
@@ -39,10 +70,41 @@ const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartT
       </ul>
 
       <div className='hidden lg:flex items-center gap-3 text-xl'>
-      
-        <button className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'>
-          <FaRegUser />
-        </button>
+        {isAuthenticated ? (
+          <div className='relative' ref={dropdownRef}>
+            <button
+              onClick={() => setProfileDropdownOpen((prev) => !prev)}
+              aria-label="Account menu"
+              className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'
+            >
+              <FaRegUser />
+            </button>
+
+            {profileDropdownOpen && (
+              <div className='absolute right-0 mt-2 w-44 bg-[#0b0f19] border border-gray-800 rounded-xl shadow-lg overflow-hidden text-sm'>
+                <button
+                  onClick={handleProfileClick}
+                  className='w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-800 transition text-left'
+                >
+                  <User className='w-4 h-4' />
+                  My Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className='w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-800 transition text-left text-red-400'
+                >
+                  <LogOut className='w-4 h-4' />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <Link to="/login"><button className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'>
+            <FaRegUser />
+          </button></Link>
+        )}
+
         <button
           onClick={() => setCartOpen(true)}
           aria-label="Open cart"
@@ -55,10 +117,6 @@ const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartT
             </span>
           )}
         </button>
-          <Link to="/dashboard"><button className="h-[42px] relative left-6 mx- flex items-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[#00633E] transition-all duration-300 hover:bg-[#F8BE00]">
-            <LogIn className="h-4 w-4" />
-           Dashboard
-          </button></Link>
       </div>
 
       {cartOpen && (
@@ -156,10 +214,35 @@ const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartT
             <button className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'>
               <IoMdSearch />
             </button>
-           
-            <button className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'>
-              <FaRegUser />
-            </button>
+
+            {isAuthenticated ? (
+              <div className='flex flex-col w-full gap-2'>
+                <button
+                  onClick={handleProfileClick}
+                  className='w-full flex items-center gap-2 text-left bg-white/10 px-4 py-3 rounded-xl font-semibold hover:bg-white/20 transition'
+                >
+                  <User className='w-4 h-4' />
+                  My Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className='w-full flex items-center gap-2 text-left bg-white text-black px-4 py-3 rounded-xl font-semibold hover:bg-gray-200 transition'
+                >
+                  <LogOut className='w-4 h-4' />
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className='h-[40px] w-[40px]'>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className='hover:text-[#E879F9] transition-colors hover:bg-gray-600 h-[40px] w-[40px] flex items-center justify-center rounded-[10px]'
+                >
+                  <FaRegUser />
+                </button>
+              </Link>
+            )}
+
             <button
               onClick={() => {
                 setCartOpen(true)
@@ -175,7 +258,6 @@ const { cart, cartCount, cartOpen, setCartOpen, updateQty, removeFromCart, cartT
                 </span>
               )}
             </button>
-         
           </div>
         </div>
       )}

@@ -1,17 +1,19 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { Star, ChevronDown, SlidersHorizontal, X, ShoppingBag, Heart, Search, User, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { Star, ChevronDown, SlidersHorizontal, X, ShoppingBag, Heart, Trash2 } from 'lucide-react';
 import Footer from '../components/Footer';
 import { CartContext } from '../components/Cartcontext';
-
-const initialProducts = [
-  { id: 1, name: 'Aviator Sunglasses', category: 'Accessories', price: 145, rating: 4.7, image: '/smartwatch.jpg', colors: ['#e9c46a', '#8d99ae', '#e76f51'] },
-  { id: 2, name: 'Printed Silk Scarf', category: 'Accessories', price: 125, rating: 4.8, badge: 'New', badgeType: 'new', image: '/schoolbag.jpg', colors: ['#ff007f', '#3a86ff', '#8338ec'] },
-  { id: 3, name: 'Italian Leather Belt', category: 'Accessories', price: 95, rating: 4.7, badge: 'Bestseller', badgeType: 'bestseller', image: '/photo-1638247025967-b4e38f787b76.jpg', colors: ['#000', '#5c3a21', '#d4a373'] },
-  { id: 4, name: 'Bi-fold Leather Wallet', category: 'Accessories', price: 85, rating: 4.8, badge: 'Bestseller', badgeType: 'bestseller', image: '/wallet.jpg', colors: ['#000', '#5c3a21', '#1d3557'] },
-];
+import { useAuth } from '../components/AuthContext';
+import { getProductsByCategory } from '../API/products';
 
 export default function StoreFront() {
-  const [selectedCategory, setSelectedCategory] = useState('Accessories');
+  const { categoryId } = useParams();
+  const { state } = useLocation();
+  const categoryName = state?.categoryName || "Collection";
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('featured');
   const [priceRanges, setPriceRanges] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -26,8 +28,23 @@ export default function StoreFront() {
     cartOpen,
     setCartOpen,
   } = useContext(CartContext);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getProductsByCategory(categoryId)
+      .then((data) => setProducts(data))
+      .catch((err) => {
+        console.error("Failed to load products:", err);
+        setError("Failed to load products.");
+      })
+      .finally(() => setLoading(false));
+  }, [categoryId]);
 
   const handleAddToCart = (product) => {
+    if (!isAuthenticated) return navigate('/login');
     addToCart(product);
   };
 
@@ -38,12 +55,8 @@ export default function StoreFront() {
   };
 
   const filteredProducts = useMemo(() => {
-    return initialProducts
+    return products
       .filter((product) => {
-        if (selectedCategory !== 'All Products' && product.category !== selectedCategory) {
-          return false;
-        }
-
         if (priceRanges.length > 0) {
           const p = product.price;
           return priceRanges.some((range) => {
@@ -54,16 +67,15 @@ export default function StoreFront() {
             return false;
           });
         }
-
         return true;
       })
       .sort((a, b) => {
         if (sortBy === 'low-to-high') return a.price - b.price;
         if (sortBy === 'high-to-low') return b.price - a.price;
-        if (sortBy === 'rating') return b.rating - a.rating;
+        if (sortBy === 'rating') return (b.ratings_average || 0) - (a.ratings_average || 0);
         return 0;
       });
-  }, [selectedCategory, sortBy, priceRanges]);
+  }, [products, sortBy, priceRanges]);
 
   const FilterContent = () => (
     <>
@@ -94,23 +106,18 @@ export default function StoreFront() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
       {/* Hero Header */}
-      <div
-        className="relative bg-[#111625] border-b border-gray-800 py-12 px-4 sm:px-8 bg-cover bg-center"
-        style={{ backgroundImage: "url('/dimondearring.jpg')" }}
-      >
-        {/* Dark overlay so text stays readable over the image */}
-        <div className="absolute inset-0 bg-black/60" />
-
+      <div className="relative bg-[#111625] border-b border-gray-800 py-12 px-4 sm:px-8">
         <div className="relative max-w-7xl mx-auto">
           <div className="text-xs text-gray-400 mb-2">
-            Home &gt; Categories &gt; <span className="text-gray-200">{selectedCategory}</span>
+            Home &gt; Categories &gt; <span className="text-gray-200">{categoryName}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold">{selectedCategory}</h1>
-          <p className="text-sm text-gray-400 mt-2">Complete your look with our accessories</p>
+          <h1 className="text-3xl sm:text-4xl font-bold">{categoryName}</h1>
+          <p className="text-sm text-gray-400 mt-2">Explore our {categoryName.toLowerCase()} picks</p>
           <p className="text-xs text-gray-500 mt-1">{filteredProducts.length} products</p>
         </div>
       </div>
 
+      {/* Cart Drawer */}
       {cartOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setCartOpen(false)} />
@@ -134,7 +141,7 @@ export default function StoreFront() {
                   {cart.map((item) => (
                     <div key={item.id} className="flex gap-3">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-900 flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={item.images?.[0] || item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-100 truncate">{item.name}</p>
@@ -231,74 +238,80 @@ export default function StoreFront() {
             </div>
           </div>
 
+          {/* Loading / Error / Empty states */}
+          {loading && <p className="text-gray-400">Loading products...</p>}
+          {error && <p className="text-red-400">{error}</p>}
+          {!loading && !error && filteredProducts.length === 0 && (
+            <p className="text-gray-400">No products found in {categoryName} yet.</p>
+          )}
+
           {/* Product Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="group flex flex-col">
-                <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-900 mb-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+          {!loading && !error && filteredProducts.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="group flex flex-col">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-900 mb-3">
+                    <img
+                      src={product.images?.[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
 
-                  {/* Badge */}
-                  {product.badge && (
-                    <span
-                      className={`absolute top-3 left-3 text-[11px] font-semibold px-3 py-1 rounded-full ${
-                        product.badgeType === 'new'
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-amber-500 text-white'
-                      }`}
-                    >
-                      {product.badge}
-                    </span>
+                    {product.is_featured && (
+                      <span className="absolute top-3 left-3 text-[11px] font-semibold px-3 py-1 rounded-full bg-amber-500 text-white">
+                        Featured
+                      </span>
+                    )}
+
+                    <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="flex-1 bg-white text-gray-900 font-medium text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 hover:bg-gray-100 transition shadow-lg"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        Add to Cart
+                      </button>
+                      <button className="p-2.5 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition shadow-lg">
+                        <Heart className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-gray-400 mb-1">
+                    <span>{product.brand || product.gender}</span>
+                    {product.ratings_average > 0 && (
+                      <div className="flex items-center gap-1 text-amber-400">
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        <span>{product.ratings_average}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className="font-semibold text-sm text-gray-100 mb-1">{product.name}</h3>
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-bold text-white text-base">${product.price}</span>
+                    {product.discount_price && (
+                      <span className="text-xs text-gray-500 line-through">${product.discount_price}</span>
+                    )}
+                  </div>
+
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="flex gap-1.5 mt-auto">
+                      {product.colors.map((color, i) => (
+                        <span
+                          key={i}
+                          title={color}
+                          className="w-3.5 h-3.5 rounded-full border border-gray-700"
+                          style={{ backgroundColor: color.toLowerCase() }}
+                        />
+                      ))}
+                    </div>
                   )}
-
-                  {/* Add to Cart Overlay on Hover */}
-                  <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="flex-1 bg-white text-gray-900 font-medium text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 hover:bg-gray-100 transition shadow-lg"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      Add to Cart
-                    </button>
-                    <button className="p-2.5 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition shadow-lg">
-                      <Heart className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
-
-                {/* Details */}
-                <div className="flex justify-between items-center text-xs text-gray-400 mb-1">
-                  <span>{product.category}</span>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>{product.rating}</span>
-                  </div>
-                </div>
-
-                <h3 className="font-semibold text-sm text-gray-100 mb-1">{product.name}</h3>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-white text-base">${product.price}</span>
-                </div>
-
-                {product.colors && (
-                  <div className="flex gap-1.5 mt-auto">
-                    {product.colors.map((color, i) => (
-                      <span
-                        key={i}
-                        className="w-3.5 h-3.5 rounded-full border border-gray-700"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
       <Footer/>

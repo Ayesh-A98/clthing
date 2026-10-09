@@ -1,39 +1,33 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { ShoppingBag, Heart, Star, ChevronDown, SlidersHorizontal, X, ShoppingCart, Trash2, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import {
+  ShoppingBag,
+  Heart,
+  Star,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  X,
+  ShoppingCart,
+  Trash2,
+  Check,
+} from 'lucide-react';
 import { CartContext } from '../components/Cartcontext';
-
-const initialProducts = [
-  { id: 1, name: 'Minimal Leather Jacket', category: 'Clothing', price: 299, originalPrice: 399, rating: 4.8, badge: '-25%', badgeType: 'sale', image: '/whitetjacket.jpg', colors: ['#000', '#5c3a21', '#d4a373'] },
-  { id: 2, name: 'Cashmere Crewneck Sweater', category: 'Clothing', price: 189, rating: 4.9, badge: 'New', badgeType: 'new', image: '/wallet.jpg', colors: ['#fefae0', '#1d3557', '#f4a261', '#e76f51'] },
-  { id: 3, name: 'Aviator Sunglasses', category: 'Accessories', price: 145, rating: 4.7, image: '/smartwatch.jpg', colors: ['#e9c46a', '#2a9d8f', '#e76f51'] },
-  { id: 4, name: 'Leather Crossbody Bag', category: 'Bags', price: 225, originalPrice: 275, rating: 4.6, badge: '-18%', badgeType: 'sale', image: '/schoolbag2.jpg', colors: ['#000', '#8b0000', '#5c3a21'] },
-  { id: 5, name: 'Minimalist Leather Sneakers', category: 'Footwear', price: 165, rating: 4.8, badge: 'New', badgeType: 'new', image: '/schoolbag.jpg', colors: ['#fff', '#000', '#1d3557'] },
-  { id: 6, name: 'Gold Vermeil Hoop Earrings', category: 'Jewelry', price: 78, rating: 4.9, image: '/redwatch.jpg', colors: ['#e9c46a', '#e0e1dd', '#e76f51'] },
-  { id: 7, name: 'Tech Laptop Backpack', category: 'Bags', price: 149, rating: 4.5, image: '/photo-1638247025967-b4e38f787b76.jpg', colors: ['#000', '#6c757d', '#1d3557'] },
-  { id: 8, name: 'Pearl Drop Earrings', category: 'Jewelry', price: 145, rating: 4.9, image: '/photo-1606760227091-3dd870d97f1d.jpg', colors: ['#fff', '#fefae0', '#f4a261'] },
-  { id: 9, name: 'Minimalist Steel Watch', category: 'Watches', price: 275, originalPrice: 325, rating: 4.8, image: '/photo-1601370690183-1c7796ecec61.jpg', colors: ['#000', '#e76f51', '#e0e1dd'] },
-  { id: 10, name: 'Aviator Sunglasses', category: 'Accessories', price: 145, rating: 4.7, image: '/smartwatch.jpg', colors: ['#e9c46a', '#2a9d8f', '#e76f51'] },
-  { id: 11, name: 'Leather Crossbody Bag', category: 'Bags', price: 225, originalPrice: 275, rating: 4.6, badge: '-18%', badgeType: 'sale', image: '/schoolbag2.jpg', colors: ['#000', '#8b0000', '#5c3a21'] },
-  { id: 12, name: 'Minimalist Leather Sneakers', category: 'Footwear', price: 165, rating: 4.8, badge: 'New', badgeType: 'new', image: '/schoolbag.jpg', colors: ['#fff', '#000', '#1d3557'] },
-  { id: 13, name: 'Gold Vermeil Hoop Earrings', category: 'Jewelry', price: 78, rating: 4.9, image: '/redwatch.jpg', colors: ['#e9c46a', '#e0e1dd', '#e76f51'] },
-  { id: 14, name: 'Tech Laptop Backpack', category: 'Bags', price: 149, rating: 4.5, image: '/photo-1638247025967-b4e38f787b76.jpg', colors: ['#000', '#6c757d', '#1d3557'] },
-  { id: 15, name: 'Pearl Drop Earrings', category: 'Jewelry', price: 145, rating: 4.9, image: '/photo-1606760227091-3dd870d97f1d.jpg', colors: ['#fff', '#fefae0', '#f4a261'] },
-  { id: 16, name: 'Minimalist Steel Watch', category: 'Watches', price: 275, originalPrice: 325, rating: 4.8, image: '/photo-1601370690183-1c7796ecec61.jpg', colors: ['#000', '#e76f51', '#e0e1dd'] },
-  { id: 17, name: 'Aviator Sunglasses', category: 'Accessories', price: 145, rating: 4.7, image: '/photo-1542291026-7eec264c27ff.jpg', colors: ['#e9c46a', '#2a9d8f', '#e76f51'] },
-  { id: 18, name: 'Leather Crossbody Bag', category: 'Bags', price: 225, originalPrice: 275, rating: 4.6, badge: '-18%', badgeType: 'sale', image: '/photo-1542291026-7eec264c27ff.jpg', colors: ['#000', '#8b0000', '#5c3a21'] },
-  { id: 19, name: 'Minimalist Leather Sneakers', category: 'Footwear', price: 165, rating: 4.8, badge: 'New', badgeType: 'new', image: '/photo-1548036328-c9fa89d128fa.jpg', colors: ['#fff', '#000', '#1d3557'] },
-  { id: 20, name: 'Gold Vermeil Hoop Earrings', category: 'Jewelry', price: 78, rating: 4.9, image: '/photo-1549298916-b41d501d3772.jpg', colors: ['#e9c46a', '#e0e1dd', '#e76f51'] },
-  { id: 21, name: 'Tech Laptop Backpack', category: 'Bags', price: 149, rating: 4.5, image: '/photo-1638247025967-b4e38f787b76.jpg', colors: ['#000', '#6c757d', '#1d3557'] },
-  { id: 22, name: 'Pearl Drop Earrings', category: 'Jewelry', price: 145, rating: 4.9, image: '/photo-1606760227091-3dd870d97f1d.jpg', colors: ['#fff', '#fefae0', '#f4a261'] },
-  { id: 23, name: 'Minimalist Steel Watch', category: 'Watches', price: 275, originalPrice: 325, rating: 4.8, image: '/photo-1601370690183-1c7796ecec61.jpg', colors: ['#000', '#e76f51', '#e0e1dd'] },
-  { id: 24, name: 'Minimalist Steel Watch', category: 'Watches', price: 275, originalPrice: 325, rating: 4.8, image: '/photo-1520975954732-35dd22299614.jpg', colors: ['#000', '#e76f51', '#e0e1dd'] },
-];
+import { useAuth } from '../components/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getAllProducts } from '../API/products';
 
 export default function StoreFront() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [sortBy, setSortBy] = useState('featured');
   const [priceRanges, setPriceRanges] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const {
     cart,
@@ -45,16 +39,25 @@ export default function StoreFront() {
     cartOpen,
     setCartOpen,
   } = useContext(CartContext);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const categories = [
-    { name: 'All Products', count: initialProducts.length },
-    { name: 'Clothing', count: 124 },
-    { name: 'Accessories', count: 86 },
-    { name: 'Footwear', count: 52 },
-    { name: 'Bags', count: 38 },
-    { name: 'Jewelry', count: 64 },
-    { name: 'Watches', count: 28 },
-  ];
+  // Fetch the current page from the server whenever the page changes
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getAllProducts({ page: currentPage })
+      .then(({ products, meta }) => {
+        setProducts(products || []);
+        setTotalPages(meta?.totalPages || 1);
+        setTotalItems(meta?.totalItems || (products ? products.length : 0));
+      })
+      .catch((err) => {
+        console.error("Failed to load products:", err);
+        setError("Failed to load products.");
+      })
+      .finally(() => setLoading(false));
+  }, [currentPage]);
 
   const handlePriceChange = (range) => {
     setPriceRanges((prev) =>
@@ -62,10 +65,19 @@ export default function StoreFront() {
     );
   };
 
+  // NOTE: category/price filters and sorting below only apply to the products
+  // already loaded for the CURRENT page, since pagination now happens on the
+  // server. If you want filters to apply across the full catalog (not just
+  // the current page), the /products endpoint needs to accept gender/price
+  // params too, and we'd pass selectedCategory/priceRanges into
+  // getAllProducts() instead of filtering client-side.
   const filteredProducts = useMemo(() => {
-    return initialProducts
+    return products
       .filter((product) => {
-        if (selectedCategory !== 'All Products' && product.category !== selectedCategory) {
+        if (
+          selectedCategory !== 'All Products' &&
+          product.gender !== selectedCategory
+        ) {
           return false;
         }
 
@@ -87,35 +99,25 @@ export default function StoreFront() {
       .sort((a, b) => {
         if (sortBy === 'low-to-high') return a.price - b.price;
         if (sortBy === 'high-to-low') return b.price - a.price;
-        if (sortBy === 'rating') return b.rating - a.rating;
+        if (sortBy === 'rating') return (b.ratings_average || 0) - (a.ratings_average || 0);
         return 0;
       });
+  }, [products, selectedCategory, sortBy, priceRanges]);
+
+  // Reset to page 1 whenever filters/sort change
+  useEffect(() => {
+    setCurrentPage(1);
   }, [selectedCategory, sortBy, priceRanges]);
+
+  const goToPage = (page) => {
+    const clamped = Math.min(Math.max(page, 1), totalPages);
+    setCurrentPage(clamped);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const FilterContent = () => (
     <>
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4">Categories</h3>
-        <ul className="space-y-3 text-sm">
-          {categories.map((cat) => (
-            <li key={cat.name}>
-              <button
-                onClick={() => {
-                  setSelectedCategory(cat.name);
-                  setFiltersOpen(false);
-                }}
-                className={`w-full text-left transition ${
-                  selectedCategory === cat.name ? 'text-pink-500 font-semibold' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {cat.name} ({cat.count})
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
         <h3 className="text-lg font-semibold mb-4">Price Range</h3>
         <div className="space-y-3 text-sm text-gray-300">
           {[
@@ -139,6 +141,69 @@ export default function StoreFront() {
     </>
   );
 
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 1 && i <= currentPage + 1)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-10">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#151c2e] border border-gray-700 text-gray-300 hover:border-pink-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {pages.map((page, idx) =>
+          page === '...' ? (
+            <span
+              key={`ellipsis-${idx}`}
+              className="w-10 h-10 flex items-center justify-center text-gray-500 select-none"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => goToPage(page)}
+              aria-current={currentPage === page ? 'page' : undefined}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-semibold transition ${
+                currentPage === page
+                  ? 'bg-fuchsia-600 text-white'
+                  : 'bg-[#151c2e] border border-gray-700 text-gray-300 hover:border-pink-500 hover:text-white'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#151c2e] border border-gray-700 text-gray-300 hover:border-pink-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans">
       {/* Breadcrumb + Cart trigger */}
@@ -146,8 +211,6 @@ export default function StoreFront() {
         <div className="text-xs text-gray-400">
           Home &gt; <span className="text-gray-200">Products</span>
         </div>
-
-      
       </div>
 
       {/* Cart Drawer */}
@@ -174,7 +237,7 @@ export default function StoreFront() {
                   {cart.map((item) => (
                     <div key={item.id} className="flex gap-3">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-900 flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={item.images?.[0] || item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-100 truncate">{item.name}</p>
@@ -257,11 +320,10 @@ export default function StoreFront() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">{selectedCategory}</h1>
-              <p className="text-sm text-gray-400 mt-1">{filteredProducts.length} products</p>
+              <p className="text-sm text-gray-400 mt-1">{totalItems} products</p>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Mobile filter toggle */}
               <button
                 onClick={() => setFiltersOpen(true)}
                 className="lg:hidden flex items-center gap-2 bg-[#151c2e] text-sm text-gray-200 border border-gray-700 rounded-lg px-4 py-2 hover:border-pink-500 transition"
@@ -286,72 +348,86 @@ export default function StoreFront() {
             </div>
           </div>
 
+          {/* Loading / Error / Empty states */}
+          {loading && <p className="text-gray-400">Loading products...</p>}
+          {error && <p className="text-red-400">{error}</p>}
+          {!loading && !error && filteredProducts.length === 0 && (
+            <p className="text-gray-400">No products found.</p>
+          )}
+
           {/* Product Cards */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="group flex flex-col">
-                <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-gray-900 mb-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-
-                  {product.badge && (
-                    <span
-                      className={`absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-md ${
-                        product.badgeType === 'sale' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-                      }`}
-                    >
-                      {product.badge}
-                    </span>
-                  )}
-
-                  {/* Hover / tap buttons */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-200 transition-colors text-black font-semibold text-sm px-4 py-2.5 rounded-lg"
-                    >
-                      <ShoppingBag className="w-4 h-4" /> Add to Cart
-                    </button>
-                    <button className="bg-white hover:bg-gray-200 transition-colors text-black h-10 w-10 flex items-center justify-center rounded-lg shrink-0">
-                      <Heart className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-start text-xs text-gray-400 mb-1">
-                  <span>{product.category}</span>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>{product.rating}</span>
-                  </div>
-                </div>
-
-                <h3 className="font-semibold text-sm text-gray-100 mb-1">{product.name}</h3>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-white text-base">${product.price}</span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-gray-500 line-through">${product.originalPrice}</span>
-                  )}
-                </div>
-
-                {product.colors && (
-                  <div className="flex gap-1.5 mt-auto">
-                    {product.colors.map((color, i) => (
-                      <span
-                        key={i}
-                        className="w-3.5 h-3.5 rounded-full border border-gray-600"
-                        style={{ backgroundColor: color }}
+          {!loading && !error && filteredProducts.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                {filteredProducts.map((product) => (
+                  <div key={product.id} className="group flex flex-col">
+                    <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-gray-900 mb-3">
+                      <img
+                        src={product.images?.[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                    ))}
+
+                      {product.is_featured && (
+                        <span className="absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-500 text-white">
+                          Featured
+                        </span>
+                      )}
+
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button
+                          onClick={() => {
+                            if (!isAuthenticated) return navigate('/login')
+                            addToCart(product)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-200 transition-colors text-black font-semibold text-sm px-4 py-2.5 rounded-lg"
+                        >
+                          <ShoppingBag className="w-4 h-4" /> Add to Cart
+                        </button>
+                        <button className="bg-white hover:bg-gray-200 transition-colors text-black h-10 w-10 flex items-center justify-center rounded-lg shrink-0">
+                          <Heart className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-start text-xs text-gray-400 mb-1">
+                      <span>{product.gender}</span>
+                      {product.ratings_average > 0 && (
+                        <div className="flex items-center gap-1 text-amber-400">
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          <span>{product.ratings_average}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <h3 className="font-semibold text-sm text-gray-100 mb-1">{product.name}</h3>
+
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-white text-base">${product.price}</span>
+                      {product.discount_price && (
+                        <span className="text-xs text-gray-500 line-through">${product.discount_price}</span>
+                      )}
+                    </div>
+
+                    {product.colors && product.colors.length > 0 && (
+                      <div className="flex gap-1.5 mt-auto">
+                        {product.colors.map((color, i) => (
+                          <span
+                            key={i}
+                            title={color}
+                            className="w-3.5 h-3.5 rounded-full border border-gray-600"
+                            style={{ backgroundColor: color.toLowerCase() }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+
+              <Pagination />
+            </>
+          )}
         </main>
       </div>
     </div>
